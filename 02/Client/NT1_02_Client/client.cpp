@@ -108,7 +108,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 
 		// データを送受信処理をスレッド（WinMainの流れに関係なく動作する処理の流れ）として生成。
 		// データ送受信をスレッドにしないと何かデータを受信するまでRECV関数で止まってしまう。
-		hThread = (HANDLE)CreateThread(NULL, 0, Threadfunc/*☆*/, (LPVOID)&pos2P, 0, &dwID);
+		hThread = (HANDLE)CreateThread(NULL, 0, Threadfunc/*☆*/, (LPVOID)&pos1P, 0, &dwID);
 		break;
 	case WM_KEYDOWN:
 		switch (wParam) {
