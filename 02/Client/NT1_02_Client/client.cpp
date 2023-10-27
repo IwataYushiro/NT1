@@ -43,7 +43,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_  HINSTANCE hPrevInstance, 
 	// winsock初期化
 	WSAStartup(MAKEWORD(2, 0), &wdData);
 
-	hwMain = CreateWindow("CWindow", "Server",
+	hwMain = CreateWindow("CWindow", "Client",
 		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
 		800, 600, NULL, NULL, hInstance, NULL);
 
@@ -84,7 +84,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 		// リソースからビットマップを読み込む（1P）
 		hBitmap = LoadBitmap(
 			((LPCREATESTRUCT)lParam)->hInstance,
-			"MAJO"/*☆文字列*/);
+			"majo_blue.bmp"/*☆文字列*/);
 
 		// ディスプレイと互換性のある論理デバイス（デバイスコンテキスト）を取得（1P）
 		mdc = CreateCompatibleDC(NULL);
@@ -95,7 +95,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 		// リソースからビットマップを読み込む（2P）
 		hBitmap2P/*☆*/ = LoadBitmap(
 			((LPCREATESTRUCT)lParam)->hInstance,
-			"MAJO2P"/*☆文字列*/);
+			"majo_red.bmp"/*☆文字列*/);
 
 		// （2P）
 		mdc2P/*☆*/ = CreateCompatibleDC(NULL);
@@ -116,20 +116,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 			SendMessage(hwnd, WM_CLOSE, NULL, NULL);
 			break;
 		case VK_RIGHT:
-			//☆　→キー押されたらサーバ側キャラのX座標を更新
-			pos1P.x += 5;
+			//☆　→キー押されたらクライアント側キャラのX座標を更新
+			pos2P.x += 5;
 			break;
 		case VK_LEFT:
-			//☆　←キー押されたらサーバ側キャラのX座標を更新
-			pos1P.x -= 5;
+			//☆　←キー押されたらクライアント側キャラのX座標を更新
+			pos2P.x -= 5;
 			break;
 		case VK_DOWN:
-			//☆　↓キー押されたらサーバ側キャラのY座標を更新
-			pos1P.y += 5;
+			//☆　↓キー押されたらクライアント側キャラのY座標を更新
+			pos2P.y += 5;
 			break;
 		case VK_UP:
-			//☆　↑キー押されたらサーバ側キャラのY座標を更新
-			pos1P.y -= 5;
+			//☆　↑キー押されたらクライアント側キャラのY座標を更新
+			pos2P.y -= 5;
 			break;
 		}
 
