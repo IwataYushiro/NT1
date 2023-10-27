@@ -14,7 +14,7 @@ struct POS
 	int x;
 	int y;
 };
-POS pos1P, pos2P, old_pos2P;
+POS pos1P, pos2P, old_pos1P;
 RECT rect;
 
 // プロトタイプ宣言
@@ -84,7 +84,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 		// リソースからビットマップを読み込む（1P）
 		hBitmap = LoadBitmap(
 			((LPCREATESTRUCT)lParam)->hInstance,
-			"majo_blue.bmp"/*☆文字列*/);
+			"MAJO"/*☆文字列*/);
 
 		// ディスプレイと互換性のある論理デバイス（デバイスコンテキスト）を取得（1P）
 		mdc = CreateCompatibleDC(NULL);
@@ -95,7 +95,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 		// リソースからビットマップを読み込む（2P）
 		hBitmap2P/*☆*/ = LoadBitmap(
 			((LPCREATESTRUCT)lParam)->hInstance,
-			"majo_red.bmp"/*☆文字列*/);
+			"MAJO2P"/*☆文字列*/);
 
 		// （2P）
 		mdc2P/*☆*/ = CreateCompatibleDC(NULL);
@@ -108,7 +108,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 
 		// データを送受信処理をスレッド（WinMainの流れに関係なく動作する処理の流れ）として生成。
 		// データ送受信をスレッドにしないと何かデータを受信するまでRECV関数で止まってしまう。
-		hThread = (HANDLE)CreateThread(NULL, 0, Threadfunc/*☆*/, (LPVOID)&pos1P, 0, &dwID);
+		hThread = (HANDLE)CreateThread(NULL, 0, Threadfunc/*☆*/, (LPVOID)&pos2P, 0, &dwID);
 		break;
 	case WM_KEYDOWN:
 		switch (wParam) {
@@ -178,83 +178,50 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 /* 通信スレッド関数 */
 DWORD WINAPI Threadfunc(void* px) {
 
-	SOCKET sWait, sConnect;
+	SOCKET sConnect;
+	SOCKADDR_IN saConnect;
+	
+	LPCTSTR lpszAddr = "192.168.0.3";
 	WORD wPort = 8000;
-	SOCKADDR_IN saConnect, saLocal;
-	int iLen, iRecv;
 
-	// リスンソケット
-	sWait = socket(AF_INET/*☆*/, SOCK_STREAM /*☆*/, 0);
+	// ソケット
+	sConnect = socket(PF_INET, SOCK_STREAM, 0);
 
-	ZeroMemory(&saLocal, sizeof(saLocal));
+	ZeroMemory(&saConnect, sizeof(SOCKADDR_IN));
+	// コネクト用変数初期化
+	saConnect.sin_family = AF_INET;
+	saConnect.sin_addr.s_addr = inet_addr(lpszAddr);
+	saConnect.sin_port = htons(wPort);
 
-	// 8000番に接続待機用ソケット作成
-	saLocal.sin_family = AF_INET/*☆*/;
-	saLocal.sin_addr.s_addr = INADDR_ANY/*☆*/;
-	saLocal.sin_port = htons(wPort/*☆*/);
+	if (connect(sConnect, (SOCKADDR*)&saConnect, sizeof(saConnect)) == SOCKET_ERROR) {
 
-	if (bind(sWait/*☆*/, (SOCKADDR*)&saLocal/*☆*/, sizeof(saLocal)/*☆*/) == SOCKET_ERROR) {
-
-		closesocket(sWait);
-		SetWindowText(hwMain, "接続待機ソケット失敗");
-		return 1;
-	}
-
-	if (listen(sWait/*☆*/, 2) == SOCKET_ERROR) {
-
-		closesocket(sWait);
-		SetWindowText(hwMain, "接続待機ソケット失敗");
-		return 1;
-	}
-
-	SetWindowText(hwMain, "接続待機ソケット成功");
-
-	iLen = sizeof(saConnect);
-
-	// 接続受け入れて送受信用ソケット作成
-	sConnect = accept(sWait/*☆*/, (SOCKADDR*)&saConnect/*☆*/, &iLen/*☆*/);
-
-	// 接続待ち用ソケット解放
-	closesocket(sWait/*☆*/);
-
-	if (sConnect == INVALID_SOCKET) {
-
-		shutdown(sConnect, 2);
+		SetWindowText(hwMain, "接続エラー");
 		closesocket(sConnect);
-		shutdown(sWait, 2);
-		closesocket(sWait);
-
-		SetWindowText(hwMain, "ソケット接続失敗");
-
 		return 1;
 	}
-
-	SetWindowText(hwMain, "ソケット接続成功");
-
-	iRecv = 0;
-
 	while (1)
 	{
 		int     nRcv;
 
-		old_pos2P = pos2P;
+		old_pos1P = pos1P;
+		
+		// サーバ側キャラの位置情報を送信
+		send(sConnect/*☆*/, (const char*)&pos2P/*☆*/, sizeof(POS), 0);
 
 		// クライアント側キャラの位置情報を受け取り
-		nRcv = recv(sConnect/*☆*/, (char*)&pos2P/*☆*/, sizeof(POS), 0);
+		nRcv = recv(sConnect/*☆*/, (char*)&pos1P/*☆*/, sizeof(POS), 0);
 
 		if (nRcv == SOCKET_ERROR)break;
 
-		// サーバ側キャラの位置情報を送信
-		send(sConnect/*☆*/, (const char*)&pos1P/*☆*/, sizeof(POS), 0);
-
+		
 		// 受信したクライアントが操作するキャラの座標が更新されていたら、更新領域を作って
 		// InvalidateRect関数でWM_PAINTメッセージを発行、キャラを再描画する
-		if (old_pos2P.x != pos2P.x || old_pos2P.y != pos2P.y)
+		if (old_pos1P.x != pos1P.x || old_pos1P.y != pos1P.y)
 		{
-			rect.left = old_pos2P.x - 10;
-			rect.top = old_pos2P.y - 10;
-			rect.right = old_pos2P.x + 42;
-			rect.bottom = old_pos2P.y + 42;
+			rect.left = old_pos1P.x - 10;
+			rect.top = old_pos1P.y - 10;
+			rect.right = old_pos1P.x + 42;
+			rect.bottom = old_pos1P.y + 42;
 			InvalidateRect(hwMain, &rect, TRUE);
 		}
 	}
