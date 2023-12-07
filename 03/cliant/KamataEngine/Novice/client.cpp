@@ -1,8 +1,8 @@
 #include <Novice.h>
+#include <fstream>
 #include <math.h>
 #include <mmsystem.h>
 #include <process.h>
-#include <fstream>
 #pragma comment(lib, "wsock32.lib")
 #pragma comment(lib, "winmm.lib")
 
@@ -38,14 +38,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	hwMain = GetDesktopWindow();
 
-	// 白い球
-	a.center.x = 400;
+	a.center.x = 200;
 	a.center.y = 400;
-	a.radius = 100;
+	a.radius = 50;
 
-	// 赤い球
-	b.center.x = 200;
-	b.center.y = 200;
+	b.center.x = 800;
+	b.center.y = 400;
 	b.radius = 50;
 
 	// winsock初期化
@@ -151,4 +149,19 @@ DWORD WINAPI Threadfunc(void* px) {
 
 		return 1;
 	}
+	while (1) {
+		// データ送信
+		send(sConnect, (const char*)&a, sizeof(Circle), 0);
+
+		// データ受信
+		int nRcv = recv(sConnect, (char*)&b, sizeof(Circle), 0);
+
+		if (nRcv == SOCKET_ERROR)
+			break;
+	}
+
+	shutdown(sConnect, 2);
+	closesocket(sConnect);
+
+	return 0;
 }

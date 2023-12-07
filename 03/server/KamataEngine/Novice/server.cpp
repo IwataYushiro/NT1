@@ -38,12 +38,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	hwMain = GetDesktopWindow();
 
-	a.center.x = 400;
+	a.center.x = 200;
 	a.center.y = 400;
-	a.radius = 100;
+	a.radius = 50;
 
-	b.center.x = 200;
-	b.center.y = 200;
+	b.center.x = 800;
+	b.center.y = 400;
 	b.radius = 50;
 
 	// winsock初期化
@@ -132,7 +132,7 @@ DWORD WINAPI Threadfunc(void* px) {
 
 	px = 0; // warning回避
 	// 待機ソケット作成
-	sWait = socket(PF_INET, SOCK_STREAM, 0);
+	sWait = socket(AF_INET, SOCK_STREAM, 0);
 
 	ZeroMemory(&saLocal, sizeof(saLocal));
 
