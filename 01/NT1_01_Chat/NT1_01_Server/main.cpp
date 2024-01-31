@@ -16,12 +16,7 @@ int main()
 	}
 
 	int fromlen;
-	u_short uport;
-
-	/* ポート番号の入力 */
-	printf("使用するポート番号--> ");
-	scanf_s("%hd", &uport);
-	fflush(stdin);
+	u_short uport = 8000;
 
 	/* リスンソケットをオープン */
 	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0); /*　☆socket関数　*/

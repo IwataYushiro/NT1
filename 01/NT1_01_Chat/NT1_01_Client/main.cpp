@@ -18,19 +18,8 @@ int main()
 	}
 
 	SOCKET sock;
-	u_short uport;
-	char szServer[1024] = { 0 };
-
-	/* ポート番号の入力 */
-	printf("使用するポート番号 --> ");
-	scanf_s("%hd", &uport);
-	fflush(stdin);
-
-	/* サーバ名またはサーバのIPアドレスを入力 */
-	printf("IPアドレス -->");
-	scanf_s("%s", szServer, 1024);
-	fflush(stdin);
-
+	u_short uport = 8000;
+	
 	/* ソケットをオープン */
 	sock = socket(AF_INET, SOCK_DGRAM, 0);/*　☆socket関数　*/
 	if (sock == INVALID_SOCKET) {
@@ -44,14 +33,14 @@ int main()
 	memset(&send_addr, 0, sizeof(SOCKADDR_IN));
 	send_addr.sin_family = AF_INET;
 	send_addr.sin_port = htons(uport);
-	inet_pton(send_addr.sin_family, szServer, &send_addr.sin_addr.S_un.S_addr);
+	inet_pton(send_addr.sin_family, "192.168.0.13", &send_addr.sin_addr.S_un.S_addr);
 
 	SOCKADDR_IN recv_addr;
 	/*　☆スライドを参考にSOCKADDR_IN型変数「saddr」の設定　*/
 	memset(&recv_addr, 0, sizeof(SOCKADDR_IN));
 	recv_addr.sin_family = AF_INET;
 	recv_addr.sin_port = htons(uport);
-	inet_pton(recv_addr.sin_family, szServer, &recv_addr.sin_addr.S_un.S_addr);
+	inet_pton(recv_addr.sin_family, "192.168.0.13", &recv_addr.sin_addr.S_un.S_addr);
 
 	int fromlen=(int)sizeof(recv_addr);
 	/*　☆connectはいらない	　*/
