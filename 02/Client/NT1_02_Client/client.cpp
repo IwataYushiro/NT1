@@ -181,7 +181,7 @@ DWORD WINAPI Threadfunc(void* px) {
 	SOCKET sConnect;
 	SOCKADDR_IN saConnect;
 	
-	LPCTSTR lpszAddr = "192.168.0.3";
+	LPCTSTR lpszAddr = "192.168.32.126";
 	WORD wPort = 8000;
 
 	// ソケット

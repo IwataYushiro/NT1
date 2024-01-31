@@ -3,13 +3,18 @@
 #include <string.h>
 #include <stdlib.h>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+#pragma comment ( lib, "WSock32.lib" ) /* WinSockライブラリの指定 */
 
 int main()
 {
-	SOCKET listen_s;
-	SOCKET s;
+	WSADATA wsaData;
+	/* WinSockの初期化 */
+	if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0) {
+		/* 初期化エラー */
+		printf("WinSockの初期化に失敗しました\n");
+		return 1;
+	}
 
-	SOCKADDR_IN from;
 	int fromlen;
 	u_short uport;
 
@@ -19,55 +24,24 @@ int main()
 	fflush(stdin);
 
 	/* リスンソケットをオープン */
-	listen_s = socket(AF_INET, SOCK_STREAM, 0); /*　☆socket関数　*/
-	if (listen_s == INVALID_SOCKET) {
-		printf("リスンソケットオープンエラー");
-		WSACleanup();
-		return;
-	}
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0); /*　☆socket関数　*/
 	printf("リスンソケットをオープンしました\n");
+	if (sock == INVALID_SOCKET) {
+		printf("ソケットオープンエラー\n");
+		return 1;
+	}
 
-	SOCKADDR_IN saddr;
+	SOCKADDR_IN send_addr;
 	/* ソケットに名前を付ける */
 	/*　☆スライドを参考にSOCKADDR_IN型変数「saddr」の設定　*/
-	memset(&saddr, 0, sizeof(SOCKADDR_IN));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons(uport);
-	saddr.sin_addr.s_addr = INADDR_ANY;
+	memset(&send_addr, 0, sizeof(SOCKADDR_IN));
+	send_addr.sin_family = AF_INET;
+	send_addr.sin_port = htons(uport);
+	send_addr.sin_addr.S_un.S_addr = INADDR_ANY;
 
 	/*　☆bind関数を実行　*/
-	if (bind(listen_s,(SOCKADDR*)&saddr, sizeof(saddr)) == SOCKET_ERROR) {
-		printf("bindエラー");
-		closesocket(listen_s);
-		return SOCKET_ERROR;
-	}
-	printf("bind成功です");
-
-	/* クライアントからの接続待ちの状態にする */
-	/*　☆listen関数を実行　*/
-	if (listen(listen_s, 0) == SOCKET_ERROR) {
-		printf("listenエラー\n");
-		closesocket(listen_s);
-		return SOCKET_ERROR;
-	}
-	printf("listen成功です\n");
-
-	/* 接続を待機する */
-	printf("acceptで待機します\n");
-	fromlen = (int)sizeof(from);
-	/*　☆SOCKADDR_IN型変数「from」を使ってaccept関数を実行　*/
-	s = accept(listen_s, (SOCKADDR*)&from, (int*)sizeof(fromlen));
-		if (s == INVALID_SOCKET) {
-			printf("acceptエラー\n");
-			closesocket(listen_s);
-			return;
-		}
-
-	printf("%sが接続してきました\n", inet_ntoa(from.sin_addr));
-	printf("accepet関数成功です\n");
-
-	/* リスンソケットはもう不要 */
-	closesocket(listen_s);
+	bind(sock, (sockaddr*)&send_addr, sizeof(send_addr));
+	fromlen = (int)sizeof(send_addr);
 
 	/* 会話開始 */
 	printf("会話開始\n");
@@ -78,20 +52,20 @@ int main()
 		int nRcv;
 		char szBuf[1024];
 
-		nRcv = recv(s, szBuf, sizeof(szBuf) - 1, 0);
-		szBuf[nRcv] = '\0';
+		nRcv = recvfrom(sock, szBuf, sizeof(szBuf)-1, 0, (sockaddr*)&send_addr, &fromlen);
+		if (nRcv >= 0) szBuf[nRcv] = '\0';
 
 		printf("受信--> %s\n", szBuf);
+		memset(&szBuf, 0, sizeof(szBuf));
 		printf("送信-->");
-
 		scanf_s("%s", szBuf, 1024);
 		fflush(stdin);
-
-		send(s, szBuf, (int)strlen(szBuf), 0);
+		sendto(sock, szBuf, sizeof(szBuf), 0,
+			(sockaddr*)&send_addr, sizeof(send_addr));
 	}
 
 	/* ソケットを閉じる */
-	closesocket(s);
+	closesocket(sock);
 	WSACleanup();
 
 	return 0;
