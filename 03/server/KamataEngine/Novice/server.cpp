@@ -132,7 +132,7 @@ DWORD WINAPI Threadfunc(void* px) {
 
 	px = 0; // warning回避
 	// 待機ソケット作成
-	sWait = socket(AF_INET, SOCK_STREAM, 0);
+	sWait = socket(PF_INET, SOCK_STREAM, 0);
 
 	ZeroMemory(&saLocal, sizeof(saLocal));
 
