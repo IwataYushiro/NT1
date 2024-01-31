@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <process.h>
 #include <mmsystem.h>
-
 #pragma comment(lib, "wsock32.lib")
 #pragma comment(lib, "winmm.lib")
 
@@ -179,26 +178,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 DWORD WINAPI Threadfunc(void* px) {
 
 	SOCKET sConnect;
-	SOCKADDR_IN saConnect;
+	SOCKADDR_IN saConnect, saRecv;
 	
-	LPCTSTR lpszAddr = "192.168.32.126";
+	LPCTSTR lpszAddr = "192.168.0.13";
 	WORD wPort = 8000;
 
 	// ソケット
-	sConnect = socket(PF_INET, SOCK_STREAM, 0);
+	sConnect = socket(PF_INET, SOCK_DGRAM, 0);
 
 	ZeroMemory(&saConnect, sizeof(SOCKADDR_IN));
 	// コネクト用変数初期化
 	saConnect.sin_family = AF_INET;
-	saConnect.sin_addr.s_addr = inet_addr(lpszAddr);
 	saConnect.sin_port = htons(wPort);
+	saConnect.sin_addr.S_un.S_addr = inet_addr(lpszAddr);
 
-	if (connect(sConnect, (SOCKADDR*)&saConnect, sizeof(saConnect)) == SOCKET_ERROR) {
+	ZeroMemory(&saRecv, sizeof(SOCKADDR_IN));
+	// コネクト用変数初期化
+	saRecv.sin_family = AF_INET;
+	saRecv.sin_port = htons(wPort);
+	saRecv.sin_addr.S_un.S_addr = inet_addr(lpszAddr);
+	int fromlen = (int)sizeof(saRecv);
 
-		SetWindowText(hwMain, "接続エラー");
-		closesocket(sConnect);
-		return 1;
-	}
 	while (1)
 	{
 		int     nRcv;
@@ -206,10 +206,12 @@ DWORD WINAPI Threadfunc(void* px) {
 		old_pos1P = pos1P;
 		
 		// サーバ側キャラの位置情報を送信
-		send(sConnect/*☆*/, (const char*)&pos2P/*☆*/, sizeof(POS), 0);
+		sendto(sConnect/*☆*/, (const char*)&pos2P/*☆*/, sizeof(POS), 0,
+			(sockaddr*)&saConnect, sizeof(saConnect));
 
 		// クライアント側キャラの位置情報を受け取り
-		nRcv = recv(sConnect/*☆*/, (char*)&pos1P/*☆*/, sizeof(POS), 0);
+		nRcv = recvfrom(sConnect/*☆*/, (char*)&pos1P/*☆*/, sizeof(POS), 0,
+			(sockaddr*)&saRecv, &fromlen);
 
 		if (nRcv == SOCKET_ERROR)break;
 

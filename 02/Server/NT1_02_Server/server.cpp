@@ -178,52 +178,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 /* 通信スレッド関数 */
 DWORD WINAPI Threadfunc(void* px) {
 
-	SOCKET sWait, sConnect;
+	SOCKET sConnect;
 	WORD wPort = 8000;
-	SOCKADDR_IN saConnect, saLocal;
+	SOCKADDR_IN saConnect;
 	int iLen, iRecv;
 
 	// リスンソケット
-	sWait = socket(AF_INET/*☆*/, SOCK_STREAM /*☆*/, 0);
+	sConnect = socket(AF_INET/*☆*/, SOCK_DGRAM /*☆*/, 0);
 
-	ZeroMemory(&saLocal, sizeof(saLocal));
+	ZeroMemory(&saConnect, sizeof(saConnect));
 
 	// 8000番に接続待機用ソケット作成
-	saLocal.sin_family = AF_INET/*☆*/;
-	saLocal.sin_addr.s_addr = INADDR_ANY/*☆*/;
-	saLocal.sin_port = htons(wPort/*☆*/);
+	memset(&saConnect, 0, sizeof(SOCKADDR_IN));
+	saConnect.sin_family = AF_INET/*☆*/;
+	saConnect.sin_addr.s_addr = INADDR_ANY/*☆*/;
+	saConnect.sin_port = htons(wPort/*☆*/);
 
-	if (bind(sWait/*☆*/, (SOCKADDR*)&saLocal/*☆*/, sizeof(saLocal)/*☆*/) == SOCKET_ERROR) {
-
-		closesocket(sWait);
-		SetWindowText(hwMain, "接続待機ソケット失敗");
-		return 1;
-	}
-
-	if (listen(sWait/*☆*/, 2) == SOCKET_ERROR) {
-
-		closesocket(sWait);
-		SetWindowText(hwMain, "接続待機ソケット失敗");
-		return 1;
-	}
-
-	SetWindowText(hwMain, "接続待機ソケット成功");
-
+	bind(sConnect/*☆*/, (SOCKADDR*)&saConnect/*☆*/, sizeof(saConnect)/*☆*/);
 	iLen = sizeof(saConnect);
-
-	// 接続受け入れて送受信用ソケット作成
-	sConnect = accept(sWait/*☆*/, (SOCKADDR*)&saConnect/*☆*/, &iLen/*☆*/);
-
-	// 接続待ち用ソケット解放
-	closesocket(sWait/*☆*/);
 
 	if (sConnect == INVALID_SOCKET) {
 
 		shutdown(sConnect, 2);
 		closesocket(sConnect);
-		shutdown(sWait, 2);
-		closesocket(sWait);
-
 		SetWindowText(hwMain, "ソケット接続失敗");
 
 		return 1;
@@ -240,12 +217,14 @@ DWORD WINAPI Threadfunc(void* px) {
 		old_pos2P = pos2P;
 
 		// クライアント側キャラの位置情報を受け取り
-		nRcv = recv(sConnect/*☆*/, (char*)&pos2P/*☆*/, sizeof(POS), 0);
+		nRcv = recvfrom(sConnect/*☆*/, (char*)&pos2P/*☆*/,
+			sizeof(POS), 0, (sockaddr*)&saConnect, &iLen);
 
 		if (nRcv == SOCKET_ERROR)break;
 
 		// サーバ側キャラの位置情報を送信
-		send(sConnect/*☆*/, (const char*)&pos1P/*☆*/, sizeof(POS), 0);
+		sendto(sConnect/*☆*/, (const char*)&pos1P/*☆*/, sizeof(POS),
+			0, (sockaddr*)&saConnect, sizeof(saConnect));
 
 		// 受信したクライアントが操作するキャラの座標が更新されていたら、更新領域を作って
 		// InvalidateRect関数でWM_PAINTメッセージを発行、キャラを再描画する
